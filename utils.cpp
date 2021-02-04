@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include <QNetworkInterface>
+
 QString socketErrorToString(QAbstractSocket::SocketError error)
 {
     switch (error) {
@@ -52,4 +54,16 @@ QString socketErrorToString(QAbstractSocket::SocketError error)
     case QAbstractSocket::UnknownSocketError:
         return "An unidentified error occurred.";
     }
+}
+
+QString findMyIpAddress()
+{
+    QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
+    for (int i = 0; i < ipAddressesList.size(); ++i) {
+        if (ipAddressesList.at(i) != QHostAddress::LocalHost && ipAddressesList.at(i).toIPv4Address()) {
+            return ipAddressesList.at(i).toString();
+        }
+    }
+
+    return QHostAddress(QHostAddress::LocalHost).toString();
 }

@@ -89,20 +89,10 @@ void MainWindow::startServer()
             return;
         }
 
-        QString ipAddress;
-        QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
-        for (int i = 0; i < ipAddressesList.size(); ++i) {
-            if (ipAddressesList.at(i) != QHostAddress::LocalHost && ipAddressesList.at(i).toIPv4Address()) {
-                ipAddress = ipAddressesList.at(i).toString();
-                break;
-            }
-        }
-
-        // if we did not find one, use IPv4 localhost
         setServerModeState(ServerState::STARTED);
 
-        if (ipAddress.isEmpty())
-            ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
+        QString ipAddress = findMyIpAddress();
+
         ui->textServerLog->append(QString("Сервер запущен по адресу: %1:%2")
                                       .arg(ipAddress)
                                       .arg(tcpServer->serverPort()));
