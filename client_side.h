@@ -34,6 +34,7 @@ private slots:
     void onServerDataRead();
     void onTimeOut();
     void onMessageTimeOut();
+    void onDisconnected();
 
 private:
     QTcpSocket* clientSocket_ = nullptr;

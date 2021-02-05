@@ -72,6 +72,11 @@ void MainWindow::onClientStateChanged(ClientState state)
         ui->btnClient->setText("Подключиться");
         ui->btnClient->setEnabled(true);
 
+        if (ui->checkBox->isChecked()) {
+            client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(), ui->spinClientTimeout->value());
+            client_.connectToServer();
+        }
+
         break;
     case ClientState::ERROR:
         ui->lblClientState->setText("Ошибка");

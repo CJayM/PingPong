@@ -16,6 +16,11 @@ bool ServerSide::isStarted() const
 void ServerSide::stop()
 {
     tcpServer->close();
+    if (clientServerSocket_ != nullptr){
+        clientServerSocket_->close();
+        clientServerSocket_->deleteLater();
+        clientServerSocket_ = nullptr;
+    }
 
     isServerStarted_ = false;
     isClientConnected_ = false;

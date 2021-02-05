@@ -16,17 +16,7 @@ bool ClientSide::isStarted() const
 
 void ClientSide::disconnectFromServer()
 {
-    isClientStarted_ = false;
-    emit sgnMessage("Подключение разорвано");
-    emit sgnStateChanged(ClientState::DISCONNECTED);
-
-    messagesTimer_.stop();
-
-    if (clientSocket_) {
-        clientSocket_->close();
-        clientSocket_->deleteLater();
-        clientSocket_ = nullptr;
-    }
+    onDisconnected();
 }
 
 void ClientSide::connectToServer()
@@ -70,8 +60,12 @@ void ClientSide::displayError(QAbstractSocket::SocketError socketError)
 
 void ClientSide::onConnectedToServer()
 {
+    timeoutTimer_.stop();
+
     isClientStarted_ = true;
     timeoutWaiting_ = false;
+
+    connect(clientSocket_, &QAbstractSocket::disconnected, this, &ClientSide::onDisconnected);
 
     QString msg = QString("Соединение с %1:%2 успешно").arg(clientServerIp_).arg(clientPort_);
     emit sgnMessage(msg);
@@ -122,4 +116,19 @@ void ClientSide::onMessageTimeOut()
     auto value = ++increment_;
     hashedTime_[value] = QDateTime::currentMSecsSinceEpoch();
     clientSocket_->write(QString::number(value).toLatin1());
+}
+
+void ClientSide::onDisconnected()
+{
+    isClientStarted_ = false;
+    emit sgnMessage("Подключение разорвано");
+    emit sgnStateChanged(ClientState::DISCONNECTED);
+
+    messagesTimer_.stop();
+
+    if (clientSocket_) {
+        clientSocket_->close();
+        clientSocket_->deleteLater();
+        clientSocket_ = nullptr;
+    }
 }
