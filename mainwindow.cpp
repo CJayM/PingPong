@@ -15,6 +15,13 @@ MainWindow::MainWindow(QWidget* parent)
 
     connect(ui->btnServer, &QPushButton::clicked, this, &MainWindow::onServerBtnClick);
     connect(ui->btnClient, &QPushButton::clicked, this, &MainWindow::onClientBtnClick);
+    connect(ui->btnClearClientLog, &QPushButton::clicked, [&](){
+        ui->textClientLog->clear();
+    });
+    connect(ui->btnClearServerLog, &QPushButton::clicked, [&](){
+        ui->textServerLog->clear();
+    });
+
     connect(&client_, &ClientSide::sgnStateChanged, this, &MainWindow::onClientStateChanged);
     connect(&server_, &ServerSide::sgnStateChanged, this, &MainWindow::onServerStateChanged);
     connect(&client_, &ClientSide::sgnMessage, this, &MainWindow::onClientMessage);
