@@ -22,7 +22,7 @@ public:
     void disconnectFromServer();
     void connectToServer();
 
-    void setConnectionParams(QString ip, int port);
+    void setConnectionParams(QString ip, int port, int timeout);
 
 signals:
     void sgnStateChanged(ClientState state, QString msg);
@@ -42,6 +42,7 @@ private:
 
     QTimer timeoutTimer_;
     bool timeoutWaiting_ = false;
+    int timeoutDuration_ = 3000;
 };
 
 #endif // CLIENTSIDE_H

@@ -39,7 +39,7 @@ void MainWindow::onClientBtnClick()
     if (client_.isStarted()) {
         client_.disconnectFromServer();
     } else {
-        client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value());
+        client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(),ui->spinClientTimeout->value());
         client_.connectToServer();
     }
 }
@@ -57,7 +57,6 @@ void MainWindow::onClientStateChanged(ClientState state, QString msg)
         ui->btnClient->setEnabled(true);
         break;
     case ClientState::CONNECTING:
-        ui->textClientLog->append("Поключение к ");
         ui->lblClientState->setText("Подключение к удалённому серверу...");
 
         ui->btnClient->setText("Подключение...");
@@ -84,6 +83,12 @@ void MainWindow::onClientStateChanged(ClientState state, QString msg)
 
         ui->btnClient->setText("Подключиться");
         ui->btnClient->setEnabled(true);
+
+        if (ui->checkBox->isChecked()){
+            client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(),ui->spinClientTimeout->value());
+            client_.connectToServer();
+        }
+
         break;
     }
 }

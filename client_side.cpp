@@ -26,7 +26,8 @@ void ClientSide::disconnectFromServer()
 void ClientSide::connectToServer()
 {
     isClientStarted_ = false;
-    emit sgnStateChanged(ClientState::CONNECTING, "Подключение...");
+    QString msg = QString("Подключение к %1:%2 ...").arg(clientServerIp_).arg(clientPort_);
+    emit sgnStateChanged(ClientState::CONNECTING, msg);
 
     clientSocket_ = new QTcpSocket(this);
     connect(clientSocket_, &QTcpSocket::connected, this, &ClientSide::onConnectedToServer);
@@ -36,11 +37,12 @@ void ClientSide::connectToServer()
 
     timeoutWaiting_ = true;
     clientSocket_->connectToHost(clientServerIp_, clientPort_);
-    timeoutTimer_.start(3000);
+    timeoutTimer_.start(timeoutDuration_);
 }
 
-void ClientSide::setConnectionParams(QString ip, int port)
+void ClientSide::setConnectionParams(QString ip, int port, int timeout)
 {
+    timeoutDuration_ = timeout;
     clientServerIp_ = ip;
     clientPort_ = port;
 }
