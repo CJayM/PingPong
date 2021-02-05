@@ -168,6 +168,8 @@ void ServerSide::proccessMessages(QVector<Message> messages)
     stream.setByteOrder(QDataStream::LittleEndian);
 
     for(const auto& msg: messages){
+        emit sgnMessage(templates::MSG_MESSAGE_RECEIVED.arg(msg.header.id).arg(msg.header.size));
+
         Answer answer;
         answer.id = msg.header.id;
         answer.startTime = msg.header.startTime;

@@ -15,6 +15,7 @@ extern const QString MSG_RECEIVE_ANSWER;
 extern const QString MSG_SENDING;
 extern const QString MSG_CONNECTION_SUCCESSFUL;
 extern const QString MSG_CONNECTING_TO;
+extern const QString MSG_MESSAGE_RECEIVED;
 }
 
 #endif // STRING_TEMPLATES_H
