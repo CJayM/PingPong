@@ -86,12 +86,16 @@ void ClientSide::onServerDataRead()
     auto now = QDateTime::currentMSecsSinceEpoch();
     auto data = clientSocket_->readAll();
     bool success;
-    qint64 answerTime = data.toLongLong(&success);
+    qint64 answer = data.toLongLong(&success);
     int delta = 0;
-    if (hashedTime_.contains(answerTime) == false)
+    if (hashedTime_.contains(answer) == false){
+        emit sgnMessage("Принято неизвестное значение");
         return;
+    }
 
-    delta = now - hashedTime_[answerTime];
+    delta = now - hashedTime_[answer];
+    hashedTime_.remove(answer);
+    emit sgnMessage(QString("Получен ответ за %1 ms").arg(delta));
 }
 
 void ClientSide::onTimeOut()

@@ -85,4 +85,5 @@ void ServerSide::onDataRead()
 {
     auto data = clientServerSocket_->readAll();
     clientServerSocket_->write(data);
+    emit sgnMessage(QString("Получено сообщение: %1").arg(QString(data)));
 }
