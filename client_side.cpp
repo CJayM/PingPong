@@ -37,11 +37,12 @@ void ClientSide::connectToServer()
     timeoutTimer_.start(timeoutDuration_);
 }
 
-void ClientSide::setConnectionParams(QString ip, int port, int timeout)
+void ClientSide::setConnectionParams(QString ip, int port, int timeout, int pMesSize)
 {
     timeoutDuration_ = timeout;
     clientServerIp_ = ip;
     clientPort_ = port;
+    mesSize_ = pMesSize;
 }
 
 void ClientSide::displayError(QAbstractSocket::SocketError socketError)
@@ -82,7 +83,7 @@ void ClientSide::onServerDataRead()
     bool success;
     qint64 answer = data.toLongLong(&success);
     int delta = 0;
-    if (hashedTime_.contains(answer) == false){
+    if (hashedTime_.contains(answer) == false) {
         emit sgnMessage("Принято неизвестное значение");
         return;
     }
