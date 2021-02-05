@@ -13,12 +13,14 @@ SOURCES += \
     client_side.cpp \
     main.cpp \
     mainwindow.cpp \
+    protocol.cpp \
     server_side.cpp \
     utils.cpp
 
 HEADERS += \
     client_side.h \
     mainwindow.h \
+    protocol.h \
     server_side.h \
     utils.h
 
