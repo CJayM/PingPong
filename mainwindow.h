@@ -32,6 +32,8 @@ private slots:
     void onClientMessage(QString msg);
     void onServerMessage(QString msg);
 
+    void onParamsChanged();
+
 private:
     Ui::MainWindow* ui;
 

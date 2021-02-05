@@ -42,12 +42,13 @@ void ClientSide::connectToServer()
     timeoutTimer_.start(timeoutDuration_);
 }
 
-void ClientSide::setConnectionParams(QString ip, int port, int timeout, int pMesSize)
+void ClientSide::setConnectionParams(QString ip, int port, int timeout, int pMesSize, int answerTimeout)
 {
     timeoutDuration_ = timeout;
     clientServerIp_ = ip;
     clientPort_ = port;
     mesSize_ = pMesSize;
+    answerTimeoutDuration_ = answerTimeout;
 }
 
 void ClientSide::displayError(QAbstractSocket::SocketError socketError)
@@ -86,7 +87,6 @@ void ClientSide::onConnectedToServer()
 void ClientSide::onServerDataRead()
 {
     answerTimer_.stop();
-
     {
         QMutexLocker locker(&mutex_);
         readBuffer_.append(clientSocket_->readAll());

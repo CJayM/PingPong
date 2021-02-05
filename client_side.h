@@ -27,7 +27,7 @@ public:
     void disconnectFromServer();
     void connectToServer();
 
-    void setConnectionParams(QString ip, int port, int timeout, int mesSize);
+    void setConnectionParams(QString ip, int port, int timeout, int mesSize, int answerTimeout);
 
 signals:
     void sgnStateChanged(ClientState state);
