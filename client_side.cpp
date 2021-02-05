@@ -5,6 +5,12 @@
 #include <QDateTime>
 #include <QDebug>
 
+const QString STR_RECEIVE_ANSWER = "I receive answer #%1 for %2 мсек";
+const QString STR_CANT_PARSE = "Не получилось разобрать %1 байт";
+const QString STR_SENDING = "Отправляется #%1 размером %2 kb";
+const QString STR_CONNECTION_SUCCESSFUL = "Соединение с %1:%2 успешно";
+const QString STR_CONNECTING_TO = "Подключение к %1:%2 ...";
+
 ClientSide::ClientSide()
 {
     connect(&timeoutTimer_, &QTimer::timeout, this, &ClientSide::onTimeOut);
@@ -23,7 +29,7 @@ void ClientSide::disconnectFromServer()
 void ClientSide::connectToServer()
 {
     isClientStarted_ = false;
-    QString msg = QString("Подключение к %1:%2 ...").arg(clientServerIp_).arg(clientPort_);
+    QString msg = STR_CONNECTING_TO.arg(clientServerIp_).arg(clientPort_);
     emit sgnMessage(msg);
     emit sgnStateChanged(ClientState::CONNECTING);
 
@@ -72,7 +78,7 @@ void ClientSide::onConnectedToServer()
 
     connect(clientSocket_, &QAbstractSocket::disconnected, this, &ClientSide::onDisconnected);
 
-    QString msg = QString("Соединение с %1:%2 успешно").arg(clientServerIp_).arg(clientPort_);
+    QString msg = STR_CONNECTION_SUCCESSFUL.arg(clientServerIp_).arg(clientPort_);
     emit sgnMessage(msg);
     emit sgnStateChanged(ClientState::CONNECTED);
 
@@ -114,13 +120,16 @@ void ClientSide::sendMessage()
     if ((clientSocket_ == nullptr) | (clientSocket_->isOpen() == false))
         return;
 
-    MessageHeader message;
-    message.id = ++increment_;
-    message.size = mesSize_;
-    message.time = QDateTime::currentMSecsSinceEpoch();
+    MessageHeader header;
+    header.id = ++increment_;
+    header.size = mesSize_;
+    header.startTime = QDateTime::currentMSecsSinceEpoch();
 
-    emit sgnMessage(QString("Отправляется #%1 размером %2 kb").arg(message.id).arg(message.size));
-    write_ << message;
+    MessageBody body{ header.size };
+
+    emit sgnMessage(STR_SENDING.arg(header.id).arg(header.size));
+    write_ << header;
+    write_ << body;
     clientSocket_->flush();
 }
 
@@ -161,11 +170,16 @@ QVector<Answer> ClientSide::parseAnswers()
         auto pos = stream.device()->pos();
         Answer answer;
         stream >> answer;
-        if (answer.isCorrect() == false){
+        if (answer.isCorrect() == false) {
             skipped += 1;
             stream.device()->seek(pos + 1);
             eated = stream.device()->pos();
             continue;
+        }
+
+        if (skipped > 0) {
+            emit sgnMessage(STR_CANT_PARSE.arg(skipped));
+            skipped = 0;
         }
 
         answers << answer;
@@ -182,6 +196,7 @@ QVector<Answer> ClientSide::parseAnswers()
 
 void ClientSide::proccessAnswers(QVector<Answer> answers)
 {
-    for(const auto& answer: answers)
-        qDebug() << "I receive answer" << answer.id;
+    for (const auto& answer : answers) {
+        emit sgnMessage(STR_RECEIVE_ANSWER.arg(answer.id).arg(answer.avrTime));
+    }
 }

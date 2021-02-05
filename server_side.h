@@ -1,8 +1,12 @@
 #ifndef SERVERSIDE_H
 #define SERVERSIDE_H
 
+#include <QMutex>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QVector>
+
+#include "protocol.h"
 
 enum class ServerState {
     STOPPED,
@@ -40,6 +44,12 @@ private:
     uint serverPort_;
     bool isClientConnected_ = true;
     QString lastServerError_;
+
+    QByteArray readBuffer_;
+    QMutex mutex_;
+
+    QVector<Message> parseMessages();
+    void proccessMessages(QVector<Message> messages);
 };
 
 #endif // SERVERSIDE_H
