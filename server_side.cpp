@@ -160,7 +160,7 @@ QVector<Message> ServerSide::parseMessages()
 
 void ServerSide::proccessMessages(QVector<Message> messages)
 {
-    if ((clientServerSocket_ == nullptr) | (clientServerSocket_->isOpen() == false))
+    if ((clientServerSocket_ == nullptr) || (clientServerSocket_->isOpen() == false))
         return;
 
     QDataStream stream(clientServerSocket_);

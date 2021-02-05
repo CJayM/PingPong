@@ -38,6 +38,7 @@ private slots:
     void onConnectedToServer();
     void onServerDataRead();
     void onTimeOut();
+    void onAnwerTimeOut();
     void sendMessage();
     void onDisconnected();
 
@@ -50,10 +51,13 @@ private:
 
     QTimer timeoutTimer_;
     bool timeoutWaiting_ = false;
-    int timeoutDuration_ = 3000;
+    int timeoutDuration_ = 3000;    
     int mesSize_ = 1;
 
     int increment_ = 0;
+
+    int answerTimeoutDuration_ = 3000;
+    QTimer answerTimer_;
 
     QDataStream write_;
     QDataStream read_;

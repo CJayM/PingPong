@@ -11,6 +11,7 @@
 ClientSide::ClientSide()
 {
     connect(&timeoutTimer_, &QTimer::timeout, this, &ClientSide::onTimeOut);
+    connect(&answerTimer_, &QTimer::timeout, this, &ClientSide::onAnwerTimeOut);
 }
 
 bool ClientSide::isStarted() const
@@ -84,13 +85,15 @@ void ClientSide::onConnectedToServer()
 
 void ClientSide::onServerDataRead()
 {
+    answerTimer_.stop();
+
     {
         QMutexLocker locker(&mutex_);
         readBuffer_.append(clientSocket_->readAll());
     }
 
     auto answers = parseAnswers();
-    proccessAnswers(answers);
+    proccessAnswers(answers);    
 }
 
 void ClientSide::onTimeOut()
@@ -112,10 +115,18 @@ void ClientSide::onTimeOut()
     emit sgnStateChanged(ClientState::TIMEOUT);
 }
 
+void ClientSide::onAnwerTimeOut()
+{
+    answerTimer_.stop();
+    emit sgnMessage("Превышен интервал ожидания ответа");
+    sendMessage();
+}
+
 void ClientSide::sendMessage()
 {
-    if ((clientSocket_ == nullptr) | (clientSocket_->isOpen() == false))
+    if ((clientSocket_ == nullptr) || (clientSocket_->isOpen() == false))
         return;
+
 
     MessageHeader header;
     header.id = ++increment_;
@@ -128,10 +139,12 @@ void ClientSide::sendMessage()
     write_ << header;
     write_ << body;
     clientSocket_->flush();
+    answerTimer_.start(answerTimeoutDuration_);
 }
 
 void ClientSide::onDisconnected()
 {
+    answerTimer_.stop();
     isClientStarted_ = false;
     emit sgnMessage("Подключение разорвано");
     emit sgnStateChanged(ClientState::DISCONNECTED);
@@ -193,7 +206,14 @@ QVector<Answer> ClientSide::parseAnswers()
 
 void ClientSide::proccessAnswers(QVector<Answer> answers)
 {
+    if (answers.empty())
+        return;
+
     for (const auto& answer : answers) {
         emit sgnMessage(templates::MSG_RECEIVE_ANSWER.arg(answer.id).arg(answer.avrTime));
     }
+
+    QTimer::singleShot(1000,[&](){
+        sendMessage();
+    });
 }
