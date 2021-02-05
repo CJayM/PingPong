@@ -1,8 +1,13 @@
 #ifndef CLIENTSIDE_H
 #define CLIENTSIDE_H
 
+#include "protocol.h"
+
+#include <QDataStream>
+#include <QMutex>
 #include <QTcpSocket>
 #include <QTimer>
+#include <QVector>
 
 enum class ClientState{
     DISCONNECTED,
@@ -33,7 +38,7 @@ private slots:
     void onConnectedToServer();
     void onServerDataRead();
     void onTimeOut();
-    void onMessageTimeOut();
+    void sendMessage();
     void onDisconnected();
 
 private:
@@ -48,9 +53,15 @@ private:
     int timeoutDuration_ = 3000;
     int mesSize_ = 1;
 
-    QTimer messagesTimer_;
     int increment_ = 0;
-    QHash<int, qint64> hashedTime_;
+
+    QDataStream write_;
+    QDataStream read_;
+    QByteArray readBuffer_;
+    QMutex mutex_;
+
+    QVector<Answer> parseAnswers();
+    void proccessAnswers(QVector<Answer>);
 };
 
 #endif // CLIENTSIDE_H

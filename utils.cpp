@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <QDataStream>
 #include <QNetworkInterface>
 
 QString socketErrorToString(QAbstractSocket::SocketError error)
@@ -66,4 +67,42 @@ QString findMyIpAddress()
     }
 
     return QHostAddress(QHostAddress::LocalHost).toString();
+}
+
+const quint32 ADLER_CRC_BASE = 0xfff1;
+quint32 calculateAdlerCrc(QDataStream &stream, qint64 from, qint64 to)
+{
+    Q_ASSERT_X(from <= to, "Parser::GenerateCrc", "начало потока находится за окончанием потока");
+
+    stream.device()->seek(static_cast<qint64>(from));
+    qint64 length = to - from;
+
+    quint32 s1 = 1;
+    quint32 s2 = 0;
+    quint8 val;
+    for (std::size_t i = 0; i < length; ++i)
+    {
+        stream >> val;
+        s1 = (s1 + val) % ADLER_CRC_BASE;
+        s2 = (s2 + s1) % ADLER_CRC_BASE;
+    }
+
+    return (s2 << 16) + s1;
+}
+
+void StreamedAdlerCrc::addValue(quint8 value)
+{
+    s1 = (s1 + value) % ADLER_CRC_BASE;
+    s2 = (s2 + s1) % ADLER_CRC_BASE;
+}
+
+quint32 StreamedAdlerCrc::getCrc() const
+{
+    return (s2 << 16) + s1;
+}
+
+void StreamedAdlerCrc::reset()
+{
+    s1 = 1;
+    s2 = 0;
 }

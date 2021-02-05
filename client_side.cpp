@@ -1,12 +1,13 @@
 #include "client_side.h"
 #include "utils.h"
 
+#include "protocol.h"
 #include <QDateTime>
+#include <QDebug>
 
 ClientSide::ClientSide()
 {
     connect(&timeoutTimer_, &QTimer::timeout, this, &ClientSide::onTimeOut);
-    connect(&messagesTimer_, &QTimer::timeout, this, &ClientSide::onMessageTimeOut);
 }
 
 bool ClientSide::isStarted() const
@@ -56,12 +57,15 @@ void ClientSide::displayError(QAbstractSocket::SocketError socketError)
     auto msg = QString("Ошибка: %1").arg(socketErrorToString(socketError));
     emit sgnMessage(msg);
     emit sgnStateChanged(ClientState::ERROR);
-    messagesTimer_.stop();
 }
 
 void ClientSide::onConnectedToServer()
 {
     timeoutTimer_.stop();
+
+    write_.setDevice(clientSocket_);
+    write_.setVersion(QDataStream::Qt_5_0);
+    write_.setByteOrder(QDataStream::LittleEndian);
 
     isClientStarted_ = true;
     timeoutWaiting_ = false;
@@ -72,25 +76,18 @@ void ClientSide::onConnectedToServer()
     emit sgnMessage(msg);
     emit sgnStateChanged(ClientState::CONNECTED);
 
-    messagesTimer_.start(1000);
-    onMessageTimeOut();
+    sendMessage();
 }
 
 void ClientSide::onServerDataRead()
 {
-    auto now = QDateTime::currentMSecsSinceEpoch();
-    auto data = clientSocket_->readAll();
-    bool success;
-    qint64 answer = data.toLongLong(&success);
-    int delta = 0;
-    if (hashedTime_.contains(answer) == false) {
-        emit sgnMessage("Принято неизвестное значение");
-        return;
+    {
+        QMutexLocker locker(&mutex_);
+        readBuffer_.append(clientSocket_->readAll());
     }
 
-    delta = now - hashedTime_[answer];
-    hashedTime_.remove(answer);
-    emit sgnMessage(QString("Получен ответ за %1 ms").arg(delta));
+    auto answers = parseAnswers();
+    proccessAnswers(answers);
 }
 
 void ClientSide::onTimeOut()
@@ -112,11 +109,19 @@ void ClientSide::onTimeOut()
     emit sgnStateChanged(ClientState::TIMEOUT);
 }
 
-void ClientSide::onMessageTimeOut()
+void ClientSide::sendMessage()
 {
-    auto value = ++increment_;
-    hashedTime_[value] = QDateTime::currentMSecsSinceEpoch();
-    clientSocket_->write(QString::number(value).toLatin1());
+    if ((clientSocket_ == nullptr) | (clientSocket_->isOpen() == false))
+        return;
+
+    MessageHeader message;
+    message.id = ++increment_;
+    message.size = mesSize_;
+    message.time = QDateTime::currentMSecsSinceEpoch();
+
+    emit sgnMessage(QString("Отправляется #%1 размером %2 kb").arg(message.id).arg(message.size));
+    write_ << message;
+    clientSocket_->flush();
 }
 
 void ClientSide::onDisconnected()
@@ -125,11 +130,58 @@ void ClientSide::onDisconnected()
     emit sgnMessage("Подключение разорвано");
     emit sgnStateChanged(ClientState::DISCONNECTED);
 
-    messagesTimer_.stop();
-
     if (clientSocket_) {
         clientSocket_->close();
         clientSocket_->deleteLater();
         clientSocket_ = nullptr;
     }
+}
+
+QVector<Answer> ClientSide::parseAnswers()
+{
+    QVector<Answer> answers;
+    QByteArray data;
+    {
+        QMutexLocker lock(&mutex_);
+        data = QByteArray(readBuffer_);
+    }
+
+    QDataStream stream(&data, QIODevice::OpenModeFlag::ReadOnly);
+    stream.setVersion(QDataStream::Qt_5_0);
+    stream.setByteOrder(QDataStream::LittleEndian);
+
+    qint64 eated = 0;
+    quint32 skipped = 0;
+    forever
+    {
+        auto available = stream.device()->bytesAvailable();
+        if (available < Answer::messageSize())
+            break;
+
+        auto pos = stream.device()->pos();
+        Answer answer;
+        stream >> answer;
+        if (answer.isCorrect() == false){
+            skipped += 1;
+            stream.device()->seek(pos + 1);
+            eated = stream.device()->pos();
+            continue;
+        }
+
+        answers << answer;
+        eated = stream.device()->pos();
+    }
+
+    if (eated > 0) {
+        QMutexLocker lock(&mutex_);
+        readBuffer_.remove(0, eated);
+    }
+
+    return answers;
+}
+
+void ClientSide::proccessAnswers(QVector<Answer> answers)
+{
+    for(const auto& answer: answers)
+        qDebug() << "I receive answer" << answer.id;
 }
