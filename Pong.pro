@@ -15,6 +15,7 @@ SOURCES += \
     mainwindow.cpp \
     protocol.cpp \
     server_side.cpp \
+    string_templates.cpp \
     utils.cpp
 
 HEADERS += \
@@ -22,6 +23,7 @@ HEADERS += \
     mainwindow.h \
     protocol.h \
     server_side.h \
+    string_templates.h \
     utils.h
 
 FORMS += \

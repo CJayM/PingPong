@@ -1,14 +1,9 @@
 #include "server_side.h"
 
-#include "utils.h"
 #include <QTcpServer>
 #include <QTimer>
-
-const static QString STR_CANT_START_SERVER = "Не удалось запустить сервер: %1.";
-const static QString STR_SERVER_STARTED = "Сервер запущен по адресу: %1:%2";
-const static QString STR_CRC_WRONG = "Не сошлась контрольная сумма у сообщения #%1";
-const static QString STR_CANT_PARSE = "Не получилось разобрать %1 байт";
-const static QString STR_CLIENT_CONNECTED = "Клиент %1:%2 подключён";
+#include "utils.h"
+#include "string_templates.h"
 
 ServerSide::ServerSide()
 {
@@ -49,7 +44,7 @@ void ServerSide::start()
             isServerStarted_ = false;
             isClientConnected_ = false;
 
-            auto msg = STR_CANT_START_SERVER.arg(tcpServer->errorString());
+            auto msg = templates::MSG_CANT_START_SERVER.arg(tcpServer->errorString());
             emit sgnMessage(msg);
             emit sgnStateChanged(ServerState::ERROR);
             return;
@@ -57,7 +52,7 @@ void ServerSide::start()
 
         isServerStarted_ = true;
         QString ipAddress = findMyIpAddress();
-        auto msg = STR_SERVER_STARTED.arg(ipAddress)
+        auto msg = templates::MSG_SERVER_STARTED.arg(ipAddress)
                        .arg(tcpServer->serverPort());
         emit sgnMessage(msg);
         emit sgnStateChanged(ServerState::STARTED);
@@ -78,7 +73,7 @@ void ServerSide::onClientConnected()
     connect(clientServerSocket_, &QIODevice::readyRead, this, &ServerSide::onDataRead);
 
     isClientConnected_ = true;
-    QString msg = STR_CLIENT_CONNECTED.arg(clientServerSocket_->peerAddress().toString()).arg(clientServerSocket_->peerPort());
+    QString msg = templates::MSG_CLIENT_CONNECTED.arg(clientServerSocket_->peerAddress().toString()).arg(clientServerSocket_->peerPort());
     emit sgnMessage(msg);
     emit sgnStateChanged(ServerState::HAS_CLIENT);
 }
@@ -139,7 +134,7 @@ QVector<Message> ServerSide::parseMessages()
             break;
 
         if (skipped > 0) {
-            emit sgnMessage(STR_CANT_PARSE.arg(skipped));
+            emit sgnMessage(templates::MSG_CANT_PARSE.arg(skipped));
             skipped = 0;
         }
 
@@ -147,7 +142,7 @@ QVector<Message> ServerSide::parseMessages()
         stream >> body;
         eated = stream.device()->pos();
         if (body.isCorrect() == false) {
-            emit sgnMessage(STR_CRC_WRONG.arg(header.id));
+            emit sgnMessage(templates::MSG_CRC_WRONG.arg(header.id));
             continue;
         }
 

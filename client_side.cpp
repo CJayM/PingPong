@@ -1,15 +1,12 @@
 #include "client_side.h"
-#include "utils.h"
 
-#include "protocol.h"
 #include <QDateTime>
 #include <QDebug>
 
-const QString STR_RECEIVE_ANSWER = "I receive answer #%1 for %2 мсек";
-const QString STR_CANT_PARSE = "Не получилось разобрать %1 байт";
-const QString STR_SENDING = "Отправляется #%1 размером %2 kb";
-const QString STR_CONNECTION_SUCCESSFUL = "Соединение с %1:%2 успешно";
-const QString STR_CONNECTING_TO = "Подключение к %1:%2 ...";
+#include "utils.h"
+#include "protocol.h"
+#include "string_templates.h"
+
 
 ClientSide::ClientSide()
 {
@@ -29,7 +26,7 @@ void ClientSide::disconnectFromServer()
 void ClientSide::connectToServer()
 {
     isClientStarted_ = false;
-    QString msg = STR_CONNECTING_TO.arg(clientServerIp_).arg(clientPort_);
+    QString msg = templates::MSG_CONNECTING_TO.arg(clientServerIp_).arg(clientPort_);
     emit sgnMessage(msg);
     emit sgnStateChanged(ClientState::CONNECTING);
 
@@ -78,7 +75,7 @@ void ClientSide::onConnectedToServer()
 
     connect(clientSocket_, &QAbstractSocket::disconnected, this, &ClientSide::onDisconnected);
 
-    QString msg = STR_CONNECTION_SUCCESSFUL.arg(clientServerIp_).arg(clientPort_);
+    QString msg = templates::MSG_CONNECTION_SUCCESSFUL.arg(clientServerIp_).arg(clientPort_);
     emit sgnMessage(msg);
     emit sgnStateChanged(ClientState::CONNECTED);
 
@@ -127,7 +124,7 @@ void ClientSide::sendMessage()
 
     MessageBody body{ header.size };
 
-    emit sgnMessage(STR_SENDING.arg(header.id).arg(header.size));
+    emit sgnMessage(templates::MSG_SENDING.arg(header.id).arg(header.size));
     write_ << header;
     write_ << body;
     clientSocket_->flush();
@@ -178,7 +175,7 @@ QVector<Answer> ClientSide::parseAnswers()
         }
 
         if (skipped > 0) {
-            emit sgnMessage(STR_CANT_PARSE.arg(skipped));
+            emit sgnMessage(templates::MSG_CANT_PARSE.arg(skipped));
             skipped = 0;
         }
 
@@ -197,6 +194,6 @@ QVector<Answer> ClientSide::parseAnswers()
 void ClientSide::proccessAnswers(QVector<Answer> answers)
 {
     for (const auto& answer : answers) {
-        emit sgnMessage(STR_RECEIVE_ANSWER.arg(answer.id).arg(answer.avrTime));
+        emit sgnMessage(templates::MSG_RECEIVE_ANSWER.arg(answer.id).arg(answer.avrTime));
     }
 }
