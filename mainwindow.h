@@ -6,6 +6,7 @@
 
 #include <QAbstractSocket>
 #include <QMainWindow>
+#include <QSettings>
 #include <QTcpServer>
 #include <QTcpSocket>
 
@@ -36,5 +37,10 @@ private:
 
     ServerSide server_;
     ClientSide client_;
+
+    QSettings settings;
+
+    void restoreSettings();
+    void saveSettings();
 };
 #endif // MAINWINDOW_H

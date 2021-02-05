@@ -19,10 +19,13 @@ MainWindow::MainWindow(QWidget* parent)
     connect(&server_, &ServerSide::sgnStateChanged, this, &MainWindow::onServerStateChanged);
     connect(&client_, &ClientSide::sgnMessage, this, &MainWindow::onClientMessage);
     connect(&server_, &ServerSide::sgnMessage, this, &MainWindow::onServerMessage);
+
+    restoreSettings();
 }
 
 MainWindow::~MainWindow()
 {
+    saveSettings();
     delete ui;
 }
 
@@ -141,4 +144,20 @@ void MainWindow::onClientMessage(QString msg)
 void MainWindow::onServerMessage(QString msg)
 {
     ui->textServerLog->append(msg);
+}
+
+void MainWindow::restoreSettings()
+{
+    ui->spinServerPort->setValue(settings.value("spinServerPort", 3333).toInt());
+    ui->spinClientPort->setValue(settings.value("spinClientPort", 3333).toInt());
+    ui->spinClientTimeout->setValue(settings.value("spinClientTimeout", 3000).toInt());
+    ui->editServerIp->setText(settings.value("editServerIp", "127.0.0.1").toString());
+}
+
+void MainWindow::saveSettings()
+{
+   settings.setValue("spinServerPort", ui->spinServerPort->value());
+   settings.setValue("spinClientPort", ui->spinClientPort->value());
+   settings.setValue("spinClientTimeout", ui->spinClientTimeout->value());
+   settings.setValue("editServerIp", ui->editServerIp->text());
 }
