@@ -78,6 +78,13 @@ void MainWindow::onClientStateChanged(ClientState state, QString msg)
         ui->btnClient->setText("Подключиться");
         ui->btnClient->setEnabled(true);
         break;
+    case ClientState::TIMEOUT:
+        ui->lblClientState->setText("Превышен интервал ожидания");
+        ui->lblClientState->setStyleSheet("background-color: rgb(255, 247, 156);");
+
+        ui->btnClient->setText("Подключиться");
+        ui->btnClient->setEnabled(true);
+        break;
     }
 }
 

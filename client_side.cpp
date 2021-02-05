@@ -3,6 +3,7 @@
 
 ClientSide::ClientSide()
 {
+    connect(&timeoutTimer_, &QTimer::timeout, this, &ClientSide::onTimeOut);
 }
 
 bool ClientSide::isStarted() const
@@ -33,7 +34,9 @@ void ClientSide::connectToServer()
     connect(clientSocket_, static_cast<void (QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error),
         this, &ClientSide::displayError);
 
+    timeoutWaiting_ = true;
     clientSocket_->connectToHost(clientServerIp_, clientPort_);
+    timeoutTimer_.start(3000);
 }
 
 void ClientSide::setConnectionParams(QString ip, int port)
@@ -45,6 +48,11 @@ void ClientSide::setConnectionParams(QString ip, int port)
 void ClientSide::displayError(QAbstractSocket::SocketError socketError)
 {
     isClientStarted_ = false;
+    if (timeoutWaiting_ == true){
+        timeoutWaiting_ = false;
+        return;
+    }
+
     auto msg = QString("Ошибка: %1").arg(socketErrorToString(socketError));
     emit sgnStateChanged(ClientState::ERROR, msg);
 }
@@ -52,6 +60,7 @@ void ClientSide::displayError(QAbstractSocket::SocketError socketError)
 void ClientSide::onConnectedToServer()
 {
     isClientStarted_ = true;
+    timeoutWaiting_ = false;
 
     QString msg = QString("Соединение с %1:%2 успешно").arg(clientServerIp_).arg(clientPort_);
     emit sgnStateChanged(ClientState::CONNECTED, msg);
@@ -62,6 +71,24 @@ void ClientSide::onConnectedToServer()
 void ClientSide::onServerDataRead()
 {
     auto data = clientSocket_->readAll();
-//    ui->textClientLog->append(data);
+    //    ui->textClientLog->append(data);
     clientSocket_->write("pong\n");
+}
+
+void ClientSide::onTimeOut()
+{
+    timeoutTimer_.stop();
+    timeoutWaiting_ = false;
+
+    if (clientSocket_) {
+        if (clientSocket_->state() == QAbstractSocket::ConnectedState)
+            return;
+
+        clientSocket_->close();
+        clientSocket_->deleteLater();
+        clientSocket_ = nullptr;
+    };
+
+    isClientStarted_ = false;
+    emit sgnStateChanged(ClientState::TIMEOUT, "Превышен интервал ожидания");
 }
