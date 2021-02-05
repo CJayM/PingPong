@@ -1,9 +1,12 @@
 #include "client_side.h"
 #include "utils.h"
 
+#include <QDateTime>
+
 ClientSide::ClientSide()
 {
     connect(&timeoutTimer_, &QTimer::timeout, this, &ClientSide::onTimeOut);
+    connect(&messagesTimer_, &QTimer::timeout, this, &ClientSide::onMessageTimeOut);
 }
 
 bool ClientSide::isStarted() const
@@ -14,7 +17,10 @@ bool ClientSide::isStarted() const
 void ClientSide::disconnectFromServer()
 {
     isClientStarted_ = false;
-    emit sgnStateChanged(ClientState::DISCONNECTED, "Подключение разорвано");
+    emit sgnMessage("Подключение разорвано");
+    emit sgnStateChanged(ClientState::DISCONNECTED);
+
+    messagesTimer_.stop();
 
     if (clientSocket_) {
         clientSocket_->close();
@@ -27,7 +33,8 @@ void ClientSide::connectToServer()
 {
     isClientStarted_ = false;
     QString msg = QString("Подключение к %1:%2 ...").arg(clientServerIp_).arg(clientPort_);
-    emit sgnStateChanged(ClientState::CONNECTING, msg);
+    emit sgnMessage(msg);
+    emit sgnStateChanged(ClientState::CONNECTING);
 
     clientSocket_ = new QTcpSocket(this);
     connect(clientSocket_, &QTcpSocket::connected, this, &ClientSide::onConnectedToServer);
@@ -50,13 +57,15 @@ void ClientSide::setConnectionParams(QString ip, int port, int timeout)
 void ClientSide::displayError(QAbstractSocket::SocketError socketError)
 {
     isClientStarted_ = false;
-    if (timeoutWaiting_ == true){
+    if (timeoutWaiting_ == true) {
         timeoutWaiting_ = false;
         return;
     }
 
     auto msg = QString("Ошибка: %1").arg(socketErrorToString(socketError));
-    emit sgnStateChanged(ClientState::ERROR, msg);
+    emit sgnMessage(msg);
+    emit sgnStateChanged(ClientState::ERROR);
+    messagesTimer_.stop();
 }
 
 void ClientSide::onConnectedToServer()
@@ -65,16 +74,24 @@ void ClientSide::onConnectedToServer()
     timeoutWaiting_ = false;
 
     QString msg = QString("Соединение с %1:%2 успешно").arg(clientServerIp_).arg(clientPort_);
-    emit sgnStateChanged(ClientState::CONNECTED, msg);
+    emit sgnMessage(msg);
+    emit sgnStateChanged(ClientState::CONNECTED);
 
-    clientSocket_->write("Ping\n");
+    messagesTimer_.start(1000);
+    onMessageTimeOut();
 }
 
 void ClientSide::onServerDataRead()
 {
+    auto now = QDateTime::currentMSecsSinceEpoch();
     auto data = clientSocket_->readAll();
-    //    ui->textClientLog->append(data);
-    clientSocket_->write("pong\n");
+    bool success;
+    qint64 answerTime = data.toLongLong(&success);
+    int delta = 0;
+    if (hashedTime_.contains(answerTime) == false)
+        return;
+
+    delta = now - hashedTime_[answerTime];
 }
 
 void ClientSide::onTimeOut()
@@ -92,5 +109,13 @@ void ClientSide::onTimeOut()
     };
 
     isClientStarted_ = false;
-    emit sgnStateChanged(ClientState::TIMEOUT, "Превышен интервал ожидания");
+    emit sgnMessage("Превышен интервал ожидания");
+    emit sgnStateChanged(ClientState::TIMEOUT);
+}
+
+void ClientSide::onMessageTimeOut()
+{
+    auto value = ++increment_;
+    hashedTime_[value] = QDateTime::currentMSecsSinceEpoch();
+    clientSocket_->write(QString::number(value).toLatin1());
 }

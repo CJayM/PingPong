@@ -20,13 +20,15 @@ void ServerSide::stop()
     isServerStarted_ = false;
     isClientConnected_ = false;
 
-    emit sgnStateChanged(ServerState::STOPPED, "Сервер остановлен");
+    emit sgnMessage("Сервер остановлен");
+    emit sgnStateChanged(ServerState::STOPPED);
 }
 
 void ServerSide::start()
 {
     isServerStarted_ = false;
-    emit sgnStateChanged(ServerState::STARTING, "Запуск сервера");
+    emit sgnMessage("Запуск сервера");
+    emit sgnStateChanged(ServerState::STARTING);
 
     QTimer::singleShot(1, [&]() {
         tcpServer = new QTcpServer(this);
@@ -38,7 +40,8 @@ void ServerSide::start()
 
             auto msg = QString("Не удалось запустить сервер: %1.")
                            .arg(tcpServer->errorString());
-            emit sgnStateChanged(ServerState::ERROR, msg);
+            emit sgnMessage(msg);
+            emit sgnStateChanged(ServerState::ERROR);
             return;
         }
 
@@ -47,7 +50,8 @@ void ServerSide::start()
         auto msg = QString("Сервер запущен по адресу: %1:%2")
                        .arg(ipAddress)
                        .arg(tcpServer->serverPort());
-        emit sgnStateChanged(ServerState::STARTED, msg);
+        emit sgnMessage(msg);
+        emit sgnStateChanged(ServerState::STARTED);
 
     });
 }
@@ -66,18 +70,19 @@ void ServerSide::onClientConnected()
 
     isClientConnected_ = true;
     QString msg = QString("Клиент %1:%2 подключён").arg(clientServerSocket_->peerAddress().toString()).arg(clientServerSocket_->peerPort());
-    emit sgnStateChanged(ServerState::HAS_CLIENT, msg);
+    emit sgnMessage(msg);
+    emit sgnStateChanged(ServerState::HAS_CLIENT);
 }
 
 void ServerSide::onDisconnectClient()
 {
     isClientConnected_ = true;
-    emit sgnStateChanged(ServerState::NO_CLIENT, "Клиент отключился");
+    emit sgnMessage("Клиент отключился");
+    emit sgnStateChanged(ServerState::NO_CLIENT);
 }
 
 void ServerSide::onDataRead()
 {
     auto data = clientServerSocket_->readAll();
-    //    ui->textServerLog->append(data);
-    clientServerSocket_->write("ok\n");
+    clientServerSocket_->write(data);
 }

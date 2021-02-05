@@ -25,7 +25,8 @@ public:
     void setPort(int port);
 
 signals:
-    void sgnStateChanged(ServerState state, QString msg);
+    void sgnStateChanged(ServerState state);
+    void sgnMessage(QString msg);
 
 private slots:
     void onClientConnected();

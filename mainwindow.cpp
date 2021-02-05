@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->btnClient, &QPushButton::clicked, this, &MainWindow::onClientBtnClick);
     connect(&client_, &ClientSide::sgnStateChanged, this, &MainWindow::onClientStateChanged);
     connect(&server_, &ServerSide::sgnStateChanged, this, &MainWindow::onServerStateChanged);
+    connect(&client_, &ClientSide::sgnMessage, this, &MainWindow::onClientMessage);
+    connect(&server_, &ServerSide::sgnMessage, this, &MainWindow::onServerMessage);
 }
 
 MainWindow::~MainWindow()
@@ -39,15 +41,13 @@ void MainWindow::onClientBtnClick()
     if (client_.isStarted()) {
         client_.disconnectFromServer();
     } else {
-        client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(),ui->spinClientTimeout->value());
+        client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(), ui->spinClientTimeout->value());
         client_.connectToServer();
     }
 }
 
-void MainWindow::onClientStateChanged(ClientState state, QString msg)
+void MainWindow::onClientStateChanged(ClientState state)
 {
-    ui->textClientLog->append(msg);
-
     switch (state) {
     case ClientState::CONNECTED:
         ui->lblClientState->setText("Подключено");
@@ -84,8 +84,8 @@ void MainWindow::onClientStateChanged(ClientState state, QString msg)
         ui->btnClient->setText("Подключиться");
         ui->btnClient->setEnabled(true);
 
-        if (ui->checkBox->isChecked()){
-            client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(),ui->spinClientTimeout->value());
+        if (ui->checkBox->isChecked()) {
+            client_.setConnectionParams(ui->editServerIp->text(), ui->spinClientPort->value(), ui->spinClientTimeout->value());
             client_.connectToServer();
         }
 
@@ -93,10 +93,8 @@ void MainWindow::onClientStateChanged(ClientState state, QString msg)
     }
 }
 
-void MainWindow::onServerStateChanged(ServerState state, QString msg)
+void MainWindow::onServerStateChanged(ServerState state)
 {
-    ui->textServerLog->append(msg);
-
     switch (state) {
     case ServerState::STARTED:
         ui->btnServer->setEnabled(true);
@@ -133,4 +131,14 @@ void MainWindow::onServerStateChanged(ServerState state, QString msg)
         ui->lblServerState->setStyleSheet("background-color: rgb(255, 114, 114);");
         break;
     }
+}
+
+void MainWindow::onClientMessage(QString msg)
+{
+    ui->textClientLog->append(msg);
+}
+
+void MainWindow::onServerMessage(QString msg)
+{
+    ui->textServerLog->append(msg);
 }

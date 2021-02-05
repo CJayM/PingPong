@@ -25,13 +25,15 @@ public:
     void setConnectionParams(QString ip, int port, int timeout);
 
 signals:
-    void sgnStateChanged(ClientState state, QString msg);
+    void sgnStateChanged(ClientState state);
+    void sgnMessage(QString msg);
 
 private slots:
     void displayError(QAbstractSocket::SocketError socketError);
     void onConnectedToServer();
     void onServerDataRead();
     void onTimeOut();
+    void onMessageTimeOut();
 
 private:
     QTcpSocket* clientSocket_ = nullptr;
@@ -43,6 +45,10 @@ private:
     QTimer timeoutTimer_;
     bool timeoutWaiting_ = false;
     int timeoutDuration_ = 3000;
+
+    QTimer messagesTimer_;
+    int increment_ = 0;
+    QHash<int, qint64> hashedTime_;
 };
 
 #endif // CLIENTSIDE_H

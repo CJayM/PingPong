@@ -26,8 +26,10 @@ private slots:
     void onServerBtnClick();
 
     void onClientBtnClick();
-    void onClientStateChanged(ClientState state, QString msg);
-    void onServerStateChanged(ServerState state, QString msg);
+    void onClientStateChanged(ClientState state);
+    void onServerStateChanged(ServerState state);
+    void onClientMessage(QString msg);
+    void onServerMessage(QString msg);
 
 private:
     Ui::MainWindow* ui;
