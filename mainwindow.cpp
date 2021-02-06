@@ -56,8 +56,10 @@ void MainWindow::onServerBtnClick()
 void MainWindow::onClientBtnClick()
 {
     if (client_.isStarted()) {
+        userDisconnected_ = true;
         client_.disconnectFromServer();
     } else {
+        userDisconnected_ = false;
         client_.connectToServer();
     }
 }
@@ -90,8 +92,10 @@ void MainWindow::onClientStateChanged(ClientState state)
         ui->editServerIp->setEnabled(true);
         ui->spinClientPort->setEnabled(true);
 
-        if (ui->checkBox->isChecked())
-            client_.connectToServer();
+        if (userDisconnected_ == false){
+            if (ui->checkBox->isChecked())
+                client_.connectToServer();
+        }
 
         break;
     case ClientState::ERROR:
@@ -145,7 +149,7 @@ void MainWindow::onServerStateChanged(ServerState state)
         ui->lblServerState->setStyleSheet("background-color: rgb(114, 114, 114);");
         ui->btnServer->setEnabled(false);
         ui->spinServerPort->setEnabled(false);
-        break;
+        break;        
     case ServerState::HAS_CLIENT:
         ui->lblServerState->setText("Клиент подключился");
         ui->lblServerState->setStyleSheet("background-color: rgb(123, 255, 114);");

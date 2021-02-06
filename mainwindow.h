@@ -42,6 +42,8 @@ private:
 
     QSettings settings;
 
+    bool userDisconnected_ = false;
+
     void restoreSettings();
     void saveSettings();
 };
